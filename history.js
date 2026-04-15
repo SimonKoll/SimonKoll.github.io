@@ -13,6 +13,51 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function getTotalPlanExercises() {
+  return PHASES.reduce((phaseSum, phase) => {
+    return (
+      phaseSum +
+      phase.days.reduce((daySum, day) => {
+        return daySum + day.exs.length;
+      }, 0)
+    );
+  }, 0);
+}
+
+function getUniqueCompletedCount(sessions) {
+  const uniqueIds = new Set(
+    sessions.map((session) =>
+      [
+        session.phaseId || "",
+        session.dayName || "",
+        session.exerciseName || "",
+        session.exerciseDetail || "",
+      ].join("::")
+    )
+  );
+  return uniqueIds.size;
+}
+
+function updateHistoryProgress(sessions) {
+  const totalPlanExercises = getTotalPlanExercises();
+  const completedUnique = getUniqueCompletedCount(sessions);
+  const pct = totalPlanExercises
+    ? Math.min(100, Math.round((completedUnique / totalPlanExercises) * 100))
+    : 0;
+
+  document.getElementById(
+    "historyProgressText"
+  ).textContent = `${completedUnique} / ${totalPlanExercises} completed`;
+
+  document.getElementById("historyProgressFill").style.width = pct + "%";
+  document.getElementById("historyRingText").textContent = pct + "%";
+  document.getElementById(
+    "historyRing"
+  ).style.background = `conic-gradient(var(--accent) ${
+    pct * 3.6
+  }deg, rgba(255,255,255,0.08) 0deg)`;
+}
+
 function deleteHistoryItem(id) {
   if (!confirm("Delete this completed session?")) return;
   removeCompletedSession(id);
@@ -42,6 +87,8 @@ function renderHistory() {
   document.getElementById("historyLastCompletion").textContent = sessions.length
     ? formatDate(sessions[0].completedAt)
     : "—";
+
+  updateHistoryProgress(sessions);
 
   const list = document.getElementById("historyList");
 

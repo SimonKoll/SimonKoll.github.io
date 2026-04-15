@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Training Tracker</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="wrap">
@@ -17,7 +17,7 @@
           </div>
         </div>
         <div class="actions">
-          <a href="history.html" class="btn">View Completed Sessions</a>
+          <a href="./history.html" class="btn">View Completed Sessions</a>
           <button class="btn secondary" onclick="resetPhase()">
             Reset Phase
           </button>
@@ -38,9 +38,9 @@
         </div>
 
         <div class="card">
-          <div class="label">Sessions completed</div>
-          <div class="metric" id="totalCompleted">0</div>
-          <div class="sub">Stored locally</div>
+          <div class="label">This week completed</div>
+          <div class="metric" id="weeklyCompleted">0</div>
+          <div class="sub" id="weeklyLabel">Resets every Monday</div>
         </div>
       </div>
 
@@ -63,13 +63,19 @@
         <div class="progressTrack">
           <div class="progressFill" id="progressFill"></div>
         </div>
+
+        <div class="progressMeta">
+          <div class="sub" style="margin: 0">
+            Weekly checkmarks reset automatically. History remains stored.
+          </div>
+        </div>
       </div>
 
       <div class="dayList" id="dayList"></div>
     </div>
 
-    <script src="data.js"></script>
-    <script src="storage.js"></script>
-    <script src="app.js"></script>
+    <script src="./data.js"></script>
+    <script src="./storage.js"></script>
+    <script src="./app.js"></script>
   </body>
 </html>

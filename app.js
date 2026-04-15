@@ -1,6 +1,42 @@
 let curPhase = 0;
-let checked = {};
+let weeklyChecked = {};
 let openDays = {};
+
+const WEEKLY_STATE_KEY = "training_tracker_weekly_checked_v1";
+const WEEKLY_STATE_WEEK_KEY = "training_tracker_weekly_checked_week_v1";
+
+/* ---------- weekly state ---------- */
+
+function getCurrentWeekId() {
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  return monday.toISOString().split("T")[0];
+}
+
+function loadWeeklyCheckedState() {
+  const currentWeek = getCurrentWeekId();
+  const savedWeek = localStorage.getItem(WEEKLY_STATE_WEEK_KEY);
+
+  if (savedWeek !== currentWeek) {
+    weeklyChecked = {};
+    localStorage.setItem(WEEKLY_STATE_WEEK_KEY, currentWeek);
+    localStorage.setItem(WEEKLY_STATE_KEY, JSON.stringify({}));
+    return;
+  }
+
+  try {
+    weeklyChecked = JSON.parse(localStorage.getItem(WEEKLY_STATE_KEY) || "{}");
+  } catch (error) {
+    weeklyChecked = {};
+  }
+}
+
+function saveWeeklyCheckedState() {
+  localStorage.setItem(WEEKLY_STATE_WEEK_KEY, getCurrentWeekId());
+  localStorage.setItem(WEEKLY_STATE_KEY, JSON.stringify(weeklyChecked));
+}
 
 /* ---------- helpers ---------- */
 
@@ -50,6 +86,10 @@ function extractMinutes(text) {
   return single ? +single[1] : null;
 }
 
+function countWeeklyCompleted() {
+  return Object.values(weeklyChecked).filter(Boolean).length;
+}
+
 /* ---------- UI BUILD ---------- */
 
 function buildHeader() {
@@ -62,8 +102,11 @@ function buildHeader() {
     PHASES[curPhase].label;
   document.getElementById("phasePace").textContent = PHASES[curPhase].pace;
 
-  document.getElementById("totalCompleted").textContent =
-    getCompletedSessions().length;
+  document.getElementById("weeklyCompleted").textContent =
+    countWeeklyCompleted();
+  document.getElementById(
+    "weeklyLabel"
+  ).textContent = `Week of ${getCurrentWeekId()}`;
 }
 
 function buildPhaseBar() {
@@ -71,8 +114,9 @@ function buildPhaseBar() {
 
   el.innerHTML = PHASES.map(
     (p, i) =>
-      `<button class="phaseBtn ${i === curPhase ? "active" : ""}"
-      onclick="selectPhase(${i})">${p.label}</button>`
+      `<button class="phaseBtn ${
+        i === curPhase ? "active" : ""
+      }" onclick="selectPhase(${i})">${p.label}</button>`
   ).join("");
 
   document.getElementById("phaseNote").textContent = PHASES[curPhase].note;
@@ -85,44 +129,43 @@ function buildDays() {
     .map((day, di) => {
       const total = day.exs.length;
       const done = day.exs.filter(
-        (_, ei) => checked[`${curPhase}_${di}_${ei}`]
+        (_, ei) => weeklyChecked[`${curPhase}_${di}_${ei}`]
       ).length;
+      const isOpen = openDays[di] !== false;
 
       return `
       <div class="day">
-
         <div class="dayHead" onclick="toggleDay(${di})">
           <span class="badge ${tagClass(day.tag)}">${tagLabel(day.tag)}</span>
           <div class="dayName">${day.n}</div>
           <div class="dayMeta">${done}/${total}</div>
+          <div class="arrow ${isOpen ? "open" : ""}">▶</div>
         </div>
 
-        <div class="dayBody ${
-          openDays[di] !== false ? "open" : ""
-        }" id="body-${di}">
-
+        <div class="dayBody ${isOpen ? "open" : ""}" id="body-${di}">
           ${day.exs
             .map((ex, ei) => {
-              const isDone = !!checked[`${curPhase}_${di}_${ei}`];
+              const isDone = !!weeklyChecked[`${curPhase}_${di}_${ei}`];
 
               return `
-            <div class="exRow">
-              <div class="check ${isDone ? "on" : ""}"
-                onclick="toggleExercise(event,${di},${ei})">
-                ${isDone ? "✓" : ""}
-              </div>
+              <div class="exRow">
+                <div class="check ${
+                  isDone ? "on" : ""
+                }" onclick="toggleExercise(event,${di},${ei})">
+                  ${isDone ? "✓" : ""}
+                </div>
 
-              <div class="exMain">
-                <div class="exName ${isDone ? "done" : ""}">${ex.n}</div>
-                <div class="exDetail">${ex.d}</div>
+                <div class="exMain">
+                  <div class="exName ${isDone ? "done" : ""}">${ex.n}</div>
+                  <div class="exDetail">${ex.d}</div>
+                </div>
               </div>
-            </div>`;
+            `;
             })
             .join("")}
-
         </div>
-
-      </div>`;
+      </div>
+    `;
     })
     .join("");
 }
@@ -138,8 +181,10 @@ function toggleExercise(event, di, ei) {
   event.stopPropagation();
 
   const key = `${curPhase}_${di}_${ei}`;
-  const wasChecked = !!checked[key];
-  checked[key] = !wasChecked;
+  const wasChecked = !!weeklyChecked[key];
+
+  weeklyChecked[key] = !wasChecked;
+  saveWeeklyCheckedState();
 
   const phase = PHASES[curPhase];
   const day = phase.days[di];
@@ -158,8 +203,6 @@ function toggleExercise(event, di, ei) {
 
   if (!wasChecked) {
     addCompletedSession(session);
-  } else {
-    removeCompletedSession(session);
   }
 
   buildDays();
@@ -176,11 +219,15 @@ function selectPhase(i) {
 }
 
 function resetPhase() {
-  if (!confirm("Reset this phase?")) return;
+  if (!confirm("Reset this phase for the current week?")) return;
 
-  clearPhaseSessions(PHASES[curPhase].id);
+  Object.keys(weeklyChecked).forEach((key) => {
+    if (key.startsWith(curPhase + "_")) {
+      delete weeklyChecked[key];
+    }
+  });
 
-  checked = {};
+  saveWeeklyCheckedState();
   buildDays();
   updateProgress();
   buildHeader();
@@ -197,7 +244,7 @@ function updateProgress() {
   phase.days.forEach((day, di) => {
     day.exs.forEach((_, ei) => {
       total++;
-      if (checked[`${curPhase}_${di}_${ei}`]) done++;
+      if (weeklyChecked[`${curPhase}_${di}_${ei}`]) done++;
     });
   });
 
@@ -206,10 +253,8 @@ function updateProgress() {
   document.getElementById(
     "progressText"
   ).textContent = `${done} / ${total} completed`;
-
   document.getElementById("progressFill").style.width = pct + "%";
   document.getElementById("ringText").textContent = pct + "%";
-
   document.getElementById(
     "ring"
   ).style.background = `conic-gradient(var(--accent) ${
@@ -217,30 +262,9 @@ function updateProgress() {
   }deg, rgba(255,255,255,0.08) 0deg)`;
 }
 
-/* ---------- LOAD STATE ---------- */
-
-function loadCompletedIntoTracker() {
-  const sessions = getCompletedSessions();
-
-  sessions.forEach((session) => {
-    const p = PHASES.findIndex((x) => x.id === session.phaseId);
-    if (p === -1) return;
-
-    const d = PHASES[p].days.findIndex((x) => x.n === session.dayName);
-    if (d === -1) return;
-
-    const e = PHASES[p].days[d].exs.findIndex(
-      (x) => x.n === session.exerciseName
-    );
-    if (e === -1) return;
-
-    checked[`${p}_${d}_${e}`] = true;
-  });
-}
-
 /* ---------- INIT ---------- */
 
-loadCompletedIntoTracker();
+loadWeeklyCheckedState();
 buildHeader();
 buildPhaseBar();
 buildDays();
