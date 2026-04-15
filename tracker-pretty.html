@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sub-1:45 Tracker – Enhanced UI</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --bg2:#111834;
+      --card:rgba(255,255,255,0.08);
+      --card-strong:rgba(255,255,255,0.12);
+      --line:rgba(255,255,255,0.12);
+      --text:#eef2ff;
+      --muted:#b5bfdc;
+      --green:#35d399;
+      --green-2:#10b981;
+      --blue:#60a5fa;
+      --violet:#a78bfa;
+      --orange:#fb923c;
+      --red:#f87171;
+      --yellow:#facc15;
+      --shadow:0 20px 60px rgba(0,0,0,0.35);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:
+      radial-gradient(circle at top left, rgba(96,165,250,.16), transparent 28%),
+      radial-gradient(circle at top right, rgba(167,139,250,.14), transparent 26%),
+      linear-gradient(180deg, #0a0f1e 0%, #0b1020 100%);
+      min-height:100%;}
+    .wrap{max-width:1180px;margin:0 auto;padding:28px 18px 60px;}
+    .hero{display:grid;grid-template-columns:1.4fr .9fr;gap:18px;align-items:stretch;margin-bottom:18px;}
+    .panel{background:var(--card);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);}
+    .hero-main{padding:26px 24px;position:relative;overflow:hidden;}
+    .hero-main:before{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle, rgba(53,211,153,.2), transparent 70%);} 
+    .eyebrow{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:12px;color:#d8def6;border:1px solid rgba(255,255,255,.1)}
+    h1{margin:14px 0 8px;font-size:clamp(28px,4vw,44px);line-height:1.02;letter-spacing:-0.03em}
+    .sub{color:var(--muted);max-width:60ch;line-height:1.55;font-size:14px}
+    .hero-side{padding:22px;display:flex;flex-direction:column;justify-content:space-between}
+    .ring-wrap{display:flex;align-items:center;gap:18px}
+    .ring{width:132px;height:132px;position:relative;flex:0 0 auto}
+    .ring svg{transform:rotate(-90deg)}
+    .ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .big{font-size:30px;font-weight:800;letter-spacing:-0.04em}
+    .mini{font-size:12px;color:var(--muted)}
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .stat{padding:14px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+    .stat .v{font-size:26px;font-weight:700;letter-spacing:-0.03em}
+    .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+    .phase-strip{display:flex;gap:10px;overflow:auto;padding:4px 2px 2px;margin:0 0 18px}
+    .phase-btn{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(--text);padding:12px 16px;border-radius:16px;cursor:pointer;white-space:nowrap;transition:.2s transform,.2s background,.2s border-color; font-weight:600}
+    .phase-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.08)}
+    .phase-btn.active{background:linear-gradient(135deg, rgba(53,211,153,.22), rgba(96,165,250,.2));border-color:rgba(96,165,250,.35)}
+
+    .info-row{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:18px}
+    .note,.focus{padding:20px 22px}
+    .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+    .note p,.focus p{margin:0;color:#e7ebfa;line-height:1.6}
+
+    .week{display:grid;grid-template-columns:repeat(7,1fr);gap:12px}
+    .day{display:flex;flex-direction:column;min-height:330px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.09);overflow:hidden;transition:.2s transform,.2s border-color,.2s box-shadow;}
+    .day:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.15);box-shadow:0 18px 40px rgba(0,0,0,.25)}
+    .day.done{box-shadow:0 18px 40px rgba(16,185,129,.18);border-color:rgba(53,211,153,.42)}
+    .day-head{padding:16px 16px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .tag{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+    .tag.run{background:rgba(96,165,250,.15);color:#cfe3ff}
+    .tag.calis{background:rgba(167,139,250,.16);color:#e6dcff}
+    .tag.core{background:rgba(251,146,60,.16);color:#ffe2c8}
+    .tag.rest{background:rgba(53,211,153,.15);color:#dafbef}
+    .tag.race{background:rgba(248,113,113,.16);color:#ffd5d5}
+    .day-title{margin:12px 0 4px;font-weight:700;line-height:1.25;font-size:16px}
+    .day-sub{font-size:12px;color:var(--muted)}
+    .checkline{margin-top:10px;height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+    .checkfill{height:100%;border-radius:999px;background:linear-gradient(90deg, var(--green), var(--blue));transition:width .25s ease}
+    .tasks{padding:10px 12px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+    .task{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:flex-start;padding:11px 10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:.18s ease}
+    .task:hover{background:rgba(255,255,255,.06)}
+    .task input{margin-top:2px;accent-color:var(--green-2);width:18px;height:18px}
+    .task-name{font-size:13px;line-height:1.35}
+    .task-name.done{text-decoration:line-through;color:var(--muted)}
+    .task-desc{font-size:11px;color:var(--muted);text-align:right;max-width:110px;line-height:1.3}
+
+    .bottom{display:grid;grid-template-columns:1fr .9fr;gap:18px;margin-top:18px}
+    .progress-card,.insight-card{padding:22px}
+    .bar{height:14px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+    .bar > span{display:block;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg, var(--green), var(--blue), var(--violet));transition:width .35s ease}
+    .progress-meta{display:flex;justify-content:space-between;gap:10px;align-items:end;margin-top:12px}
+    .progress-meta .x{font-size:13px;color:var(--muted)}
+    .progress-meta .y{font-size:26px;font-weight:800;letter-spacing:-.03em}
+    .insight-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+    .chip{padding:14px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+    .chip .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    .chip .v{margin-top:6px;font-size:20px;font-weight:700}
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    button.action{appearance:none;border:none;cursor:pointer;padding:12px 16px;border-radius:14px;color:var(--text);font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}
+    button.primary{background:linear-gradient(135deg, rgba(53,211,153,.95), rgba(59,130,246,.95));color:#05121d}
+
+    @media (max-width: 1120px){
+      .week{grid-template-columns:repeat(2,1fr)}
+      .day{min-height:unset}
+    }
+    @media (max-width: 900px){
+      .hero,.info-row,.bottom{grid-template-columns:1fr}
+    }
+    @media (max-width: 640px){
+      .week{grid-template-columns:1fr}
+      .stat-grid,.insight-grid{grid-template-columns:1fr}
+      .wrap{padding:16px 12px 44px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="panel hero-main">
+        <div class="eyebrow">Optimized weekly tracker</div>
+        <h1>Sub-1:45 Halbmarathon</h1>
+        <p class="sub">Visually upgraded training tracker with intensity-balanced weekly structure, longer bodyweight sessions, and saved progress per phase in your browser.</p>
+        <div class="actions">
+          <button class="action primary" id="markTodayBtn">Nächsten offenen Block markieren</button>
+          <button class="action" id="resetPhaseBtn">Aktuelle Phase zurücksetzen</button>
+          <button class="action" id="resetAllBtn">Alles zurücksetzen</button>
+        </div>
+      </div>
+      <div class="panel hero-side">
+        <div>
+          <div class="label">Gesamtfortschritt dieser Phase</div>
+          <div class="ring-wrap">
+            <div class="ring">
+              <svg viewBox="0 0 120 120" width="132" height="132" aria-hidden="true">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"></circle>
+                <circle id="ringProgress" cx="60" cy="60" r="48" fill="none" stroke="url(#grad)" stroke-linecap="round" stroke-width="10" stroke-dasharray="301.59" stroke-dashoffset="301.59"></circle>
+                <defs>
+                  <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#35d399"></stop>
+                    <stop offset="50%" stop-color="#60a5fa"></stop>
+                    <stop offset="100%" stop-color="#a78bfa"></stop>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="center">
+                <div class="big" id="ringPercent">0%</div>
+                <div class="mini" id="ringText">0 / 0 erledigt</div>
+              </div>
+            </div>
+            <div>
+              <div class="label">Aktive Phase</div>
+              <div style="font-size:24px;font-weight:800;letter-spacing:-.03em" id="phaseTitle">–</div>
+              <div class="mini" id="phaseSubtitle" style="margin-top:8px;max-width:24ch">–</div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-grid" id="raceStats"></div>
+      </div>
+    </section>
+
+    <div class="phase-strip" id="phaseNav"></div>
+
+    <section class="info-row">
+      <div class="panel note">
+        <div class="label">Phasenhinweis</div>
+        <p id="phaseNote"></p>
+      </div>
+      <div class="panel focus">
+        <div class="label">Trainingsfokus</div>
+        <p id="phasePace"></p>
+      </div>
+    </section>
+
+    <section class="week" id="weekGrid"></section>
+
+    <section class="bottom">
+      <div class="panel progress-card">
+        <div class="label">Wochenfortschritt</div>
+        <div class="bar"><span id="mainBar"></span></div>
+        <div class="progress-meta">
+          <div class="x">Abgeschlossene Aufgaben in der aktuellen Phase</div>
+          <div class="y" id="bigRatio">0 / 0</div>
+        </div>
+      </div>
+      <div class="panel insight-card">
+        <div class="label">Trainingsübersicht</div>
+        <div class="insight-grid">
+          <div class="chip"><div class="k">High load days</div><div class="v" id="hardDays">0</div></div>
+          <div class="chip"><div class="k">Recovery days</div><div class="v" id="easyDays">0</div></div>
+          <div class="chip"><div class="k">Bodyweight focus</div><div class="v" id="bodyweightDays">0</div></div>
+          <div class="chip"><div class="k">Longest session</div><div class="v" id="longestSession">–</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+const TODAY = new Date(2026,3,15);
+const STORAGE_KEY = 'sub145_pretty_tracker_v1';
+const RACES = [
+  {name:'Halbmarathon', date:new Date(2026,3,29)},
+  {name:'Linzathlon', date:new Date(2026,4,30)},
+  {name:'Cross Tri', date:new Date(2026,5,4)}
+];
+
+const PHASES = [
+  {
+    id:'p1',
+    label:'Taper',
+    pace:'Bis zum Halbmarathon: Volumen reduzieren, Beine frisch halten, nur kurze Reize setzen.',
+    note:'Die Woche bleibt bewusst leicht. Intensität nur kurz ansteuern, keine schwere Beinbelastung. Bodyweight-Einheiten sind kurz, sauber und ermüdungsarm.',
+    days:[
+      {n:'Tag 1 – Intervall-Reiz',tag:'r',load:'high',exs:[
+        {n:'Warm-up Jog',d:'10 min locker'},
+        {n:'3 × 1 km',d:'@ 6:20–6:30/km'},
+        {n:'Cool-down',d:'10 min locker'}]},
+      {n:'Tag 2 – Upper Body Calisthenics',tag:'c',load:'low',exs:[
+        {n:'Mobilisieren',d:'5–8 min'},
+        {n:'Push-ups',d:'3 × 8–12'},
+        {n:'Inverted Rows',d:'3 × 6–10'},
+        {n:'Pike Push-ups',d:'2 × 6–8'},
+        {n:'Plank',d:'3 × 30 Sek.'},
+        {n:'Shoulder Mobility',d:'5 min'}]},
+      {n:'Tag 3 – Easy Run',tag:'r',load:'low',exs:[
+        {n:'Easy Run',d:'20–25 min @ locker'},
+        {n:'Locker auslaufen',d:'5 min'}]},
+      {n:'Tag 4 – Tempo-Kurzblock',tag:'r',load:'moderate',exs:[
+        {n:'Warm-up',d:'10 min'},
+        {n:'Tempo-Abschnitt',d:'12–15 min kontrolliert'},
+        {n:'Cool-down',d:'10 min'}]},
+      {n:'Tag 5 – Core & Mobility',tag:'k',load:'low',exs:[
+        {n:'Dead Bug',d:'3 × 10 / Seite'},
+        {n:'Side Plank',d:'2 × 25 Sek. / Seite'},
+        {n:'Hip Mobility Flow',d:'10–12 min'}]},
+      {n:'Tag 6 – Very Easy Run',tag:'r',load:'low',exs:[
+        {n:'Very Easy Run',d:'15–20 min'},
+        {n:'Beine lockern',d:'5 min'}]},
+      {n:'Tag 7 – Rest',tag:'s',load:'recovery',exs:[
+        {n:'Komplette Erholung',d:''},
+        {n:'Mentale Vorbereitung',d:'10 min optional'}]}
+    ]
+  },
+  {
+    id:'p2',
+    label:'Linzathlon-Aufbau',
+    pace:'Qualität mit klarer Trennung: Intervalltag, dann low day, dann Temposession. Bodyweight-Einheiten länger, aber laufverträglich.',
+    note:'Die Wochenstruktur wurde optimiert: harte Reize werden durch echte Low-Days getrennt. Unterkörperarbeit bleibt vom Tempolauf und Intervalltag entkoppelt.',
+    days:[
+      {n:'Tag 1 – Intervall (VO2max)',tag:'r',load:'high',exs:[
+        {n:'Warm-up',d:'10 min locker'},
+        {n:'5 × 3 min',d:'85–90% HFmax'},
+        {n:'90 Sek. Trabpause',d:'zwischen den Wiederholungen'},
+        {n:'Cool-down',d:'10 min'}]},
+      {n:'Tag 2 – Upper Body + Core',tag:'c',load:'low',exs:[
+        {n:'Mobilisieren',d:'8 min'},
+        {n:'Push-ups',d:'4 × 10–15'},
+        {n:'Pull-ups oder Inverted Rows',d:'4 × 6–10'},
+        {n:'Pike Push-ups',d:'3 × 8–12'},
+        {n:'Hollow Hold',d:'3 × 30–40 Sek.'},
+        {n:'Leg Raises',d:'3 × 10–12'},
+        {n:'Mobility',d:'8–10 min'}]},
+      {n:'Tag 3 – Easy Run',tag:'r',load:'low',exs:[
+        {n:'Easy Run',d:'35–40 min @ 65–70% HFmax'},
+        {n:'Waden/Hamstrings lockern',d:'5 min'}]},
+      {n:'Tag 4 – Tempo Run',tag:'r',load:'high',exs:[
+        {n:'Warm-up',d:'10 min'},
+        {n:'Tempo-Lauf',d:'25 min @ 75–80% HFmax'},
+        {n:'Cool-down',d:'10 min'}]},
+      {n:'Tag 5 – Core & Mobility',tag:'k',load:'low',exs:[
+        {n:'Dead Bug',d:'3 × 12 / Seite'},
+        {n:'Bird Dog',d:'3 × 10 / Seite'},
+        {n:'Side Plank Rotation',d:'3 × 20–30 Sek.'},
+        {n:'Hip/Ankle Mobility',d:'12–15 min'}]},
+      {n:'Tag 6 – Long Run',tag:'r',load:'moderate',exs:[
+        {n:'Long Run',d:'60–80 min locker'},
+        {n:'Letzte 10 min progressiv',d:'jede 2. Woche'},
+        {n:'Nacharbeit Waden/Hüfte',d:'8 min'}]},
+      {n:'Tag 7 – Rest',tag:'s',load:'recovery',exs:[
+        {n:'Komplette Erholung',d:''},
+        {n:'Spaziergang optional',d:'20 min'}]}
+    ]
+  },
+  {
+    id:'p3',
+    label:'Cross Triathlon',
+    pace:'Zwischen den Rennen nur erhalten, nicht aufbauen. Sehr geringe Ermüdung.',
+    note:'Zwischen Linzathlon und Cross Triathlon keine zusätzliche Trainingslast erzeugen. Fokus auf Regeneration, Beweglichkeit und kurzen Aktivierungen.',
+    days:[
+      {n:'Tag 1 – Linzathlon',tag:'x',load:'high',exs:[
+        {n:'Renntag',d:'30. Mai'},
+        {n:'Rehydrieren',d:'direkt danach'}]},
+      {n:'Tag 2 – Recovery Walk',tag:'s',load:'recovery',exs:[
+        {n:'Spaziergang',d:'20–30 min'},
+        {n:'Foam Rolling',d:'8–10 min'}]},
+      {n:'Tag 3 – Easy Jog',tag:'r',load:'low',exs:[
+        {n:'Very Easy Jog',d:'15–20 min'},
+        {n:'Locker auslaufen',d:'5 min'}]},
+      {n:'Tag 4 – Light Core + Mobility',tag:'k',load:'low',exs:[
+        {n:'Plank Variationen',d:'8–10 min'},
+        {n:'Mobility Flow',d:'10–12 min'}]},
+      {n:'Tag 5 – Cross Triathlon',tag:'x',load:'high',exs:[
+        {n:'Race Day',d:'4. Juni'},
+        {n:'Danach volle Erholung',d:''}]},
+      {n:'Tag 6 – Full Recovery',tag:'s',load:'recovery',exs:[
+        {n:'Komplette Erholung',d:''}]},
+      {n:'Tag 7 – Full Recovery',tag:'s',load:'recovery',exs:[
+        {n:'Komplette Erholung',d:''}]}
+    ]
+  },
+  {
+    id:'p4',
+    label:'Grundlagenaufbau',
+    pace:'45–55 km/Woche. Polarisiert verteilen: 1 Intervalltag, 1 Tempotag, viel locker, lange Läufe stabil.',
+    note:'Für diese Phase zählt Konsistenz. Die Bodyweight-Einheit bleibt laufspezifisch und hauptsächlich oberkörper- und rumpfbetont. Unterkörperarbeit nur dosiert und nicht direkt vor Schlüsselläufen.',
+    days:[
+      {n:'Tag 1 – Intervall',tag:'r',load:'high',exs:[
+        {n:'Warm-up',d:'10–12 min'},
+        {n:'6 × 3 min',d:'85–95% HFmax'},
+        {n:'90 Sek. Pause',d:'locker traben'},
+        {n:'Cool-down',d:'10 min'}]},
+      {n:'Tag 2 – Upper Body + Core',tag:'c',load:'low',exs:[
+        {n:'Mobilisieren',d:'8 min'},
+        {n:'Push-up Progression',d:'4 × 10–15'},
+        {n:'Pull-ups / Inverted Rows',d:'4 × 6–10'},
+        {n:'Dips oder Bench Dips',d:'3 × 8–12'},
+        {n:'Hollow Hold',d:'3 × 35–45 Sek.'},
+        {n:'Side Plank',d:'3 × 25–35 Sek. / Seite'},
+        {n:'Mobility',d:'8–10 min'}]},
+      {n:'Tag 3 – Easy Run',tag:'r',load:'low',exs:[
+        {n:'Easy Run',d:'45–55 min locker'},
+        {n:'Strides optional',d:'4 × 15 Sek.'}]},
+      {n:'Tag 4 – Tempo / Schwelle',tag:'r',load:'high',exs:[
+        {n:'Warm-up',d:'10 min'},
+        {n:'30–35 min Tempo',d:'78–83% HFmax'},
+        {n:'Cool-down',d:'10 min'}]},
+      {n:'Tag 5 – Core & Mobility',tag:'k',load:'low',exs:[
+        {n:'Dead Bug',d:'3 × 12 / Seite'},
+        {n:'Bird Dog',d:'3 × 10 / Seite'},
+        {n:'Plank Shoulder Taps',d:'3 × 12 / Seite'},
+        {n:'Hip Mobility Flow',d:'12–15 min'}]},
+      {n:'Tag 6 – Long Run',tag:'r',load:'moderate',exs:[
+        {n:'Long Run',d:'16–22 km locker'},
+        {n:'Jede 2. Woche progressiv',d:'letzte 20% flotter'},
+        {n:'Waden/Hüfte nacharbeiten',d:'8–10 min'}]},
+      {n:'Tag 7 – Rest',tag:'s',load:'recovery',exs:[
+        {n:'Ruhetag',d:''},
+        {n:'Spaziergang optional',d:'20 min'}]}
+    ]
+  },
+  {
+    id:'p5',
+    label:'Sub-1:45 Vorbereitung',
+    pace:'Renntempospezifisch, aber weiterhin sauber getrennte Belastungstage. Kein unnötiger Zusatzstress durch Kraft.',
+    note:'In der Peak-Phase dient Bodyweight fast nur noch der Haltung, Rumpfstabilität und Beweglichkeit. Laufqualität steht klar im Vordergrund.',
+    days:[
+      {n:'Tag 1 – Intervall (Race Pace)',tag:'r',load:'high',exs:[
+        {n:'Warm-up',d:'10 min'},
+        {n:'5 × 1 km',d:'4:45–4:55/km'},
+        {n:'2 min Pause',d:'locker traben'},
+        {n:'Cool-down',d:'10 min'}]},
+      {n:'Tag 2 – Core Maintenance',tag:'c',load:'low',exs:[
+        {n:'Hollow Hold',d:'3 × 35–45 Sek.'},
+        {n:'Dead Bug',d:'3 × 12 / Seite'},
+        {n:'Plank',d:'3 × 40–45 Sek.'},
+        {n:'Shoulder + Hip Mobility',d:'10 min'}]},
+      {n:'Tag 3 – Easy Run',tag:'r',load:'low',exs:[
+        {n:'Easy Run',d:'40–50 min locker'},
+        {n:'4 Steigerungen optional',d:'15 Sek.'}]},
+      {n:'Tag 4 – Renntempo-Dauerlauf',tag:'r',load:'high',exs:[
+        {n:'Warm-up',d:'10 min locker'},
+        {n:'6–8 km @ Renntempo',d:'4:55–5:05/km'},
+        {n:'Cool-down',d:'10 min'}]},
+      {n:'Tag 5 – Mobility',tag:'k',load:'low',exs:[
+        {n:'Yoga / Stretching',d:'15–20 min'},
+        {n:'Foam Rolling',d:'8–10 min'}]},
+      {n:'Tag 6 – Long Run',tag:'r',load:'moderate',exs:[
+        {n:'Long Run gesamt',d:'15–19 km'},
+        {n:'Davon 6–10 km zügig',d:'nur in ausgewählten Wochen'},
+        {n:'Cooldown locker',d:'2 km oder 10 min'}]},
+      {n:'Tag 7 – Rest',tag:'s',load:'recovery',exs:[
+        {n:'Komplette Erholung',d:''}]}
+    ]
+  }
+];
+
+let state = loadState();
+let currentPhase = state.currentPhase ?? 0;
+
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {checked:{}, currentPhase:0}; }
+  catch { return {checked:{}, currentPhase:0}; }
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function daysTo(date){ return Math.max(0, Math.ceil((date - TODAY) / 86400000)); }
+function tagClass(tag){ return ({r:'run', c:'calis', k:'core', s:'rest', x:'race'})[tag] || 'run'; }
+function tagLabel(tag){ return ({r:'Laufen', c:'Bodyweight', k:'Core/Mobility', s:'Erholung', x:'Renntag'})[tag] || ''; }
+
+function raceStats(){
+  const el = document.getElementById('raceStats');
+  el.innerHTML = RACES.map(r => `
+    <div class="stat">
+      <div class="v">${daysTo(r.date)}</div>
+      <div class="l">${r.name}</div>
+    </div>`).join('');
+}
+
+function renderPhaseNav(){
+  const nav = document.getElementById('phaseNav');
+  nav.innerHTML = PHASES.map((p,i)=>
+    `<button class="phase-btn ${i===currentPhase?'active':''}" onclick="selectPhase(${i})">${p.label}</button>`
+  ).join('');
+}
+
+function getChecked(key){ return !!state.checked[key]; }
+function setChecked(key,val){ state.checked[key]=val; saveState(); }
+
+function renderInfo(){
+  const phase = PHASES[currentPhase];
+  document.getElementById('phaseTitle').textContent = phase.label;
+  document.getElementById('phaseSubtitle').textContent = `${phase.days.length} Trainingstage im Tracker`;
+  document.getElementById('phaseNote').textContent = phase.note;
+  document.getElementById('phasePace').textContent = phase.pace;
+
+  const hard = phase.days.filter(d=>d.load==='high').length;
+  const easy = phase.days.filter(d=>d.load==='low' || d.load==='recovery').length;
+  const bw = phase.days.filter(d=>d.tag==='c' || d.tag==='k').length;
+  const longHint = phase.days.flatMap(d=>d.exs.map(x=>x.d)).sort((a,b)=> String(b).length - String(a).length)[0] || '–';
+  document.getElementById('hardDays').textContent = hard;
+  document.getElementById('easyDays').textContent = easy;
+  document.getElementById('bodyweightDays').textContent = bw;
+  document.getElementById('longestSession').textContent = longHint.length > 18 ? longHint.slice(0,18)+'…' : longHint || '–';
+}
+
+function renderWeek(){
+  const phase = PHASES[currentPhase];
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = phase.days.map((day,di)=>{
+    const total = day.exs.length;
+    const done = day.exs.filter((_,ei)=>getChecked(`${currentPhase}_${di}_${ei}`)).length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    const isDone = total && done===total;
+    return `
+      <article class="day ${isDone?'done':''}">
+        <div class="day-head">
+          <span class="tag ${tagClass(day.tag)}">${tagLabel(day.tag)}</span>
+          <div class="day-title">${day.n}</div>
+          <div class="day-sub">${done}/${total} erledigt</div>
+          <div class="checkline"><div class="checkfill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="tasks">
+          ${day.exs.map((ex,ei)=>{
+            const key = `${currentPhase}_${di}_${ei}`;
+            const checked = getChecked(key);
+            return `
+            <label class="task">
+              <input type="checkbox" ${checked?'checked':''} onchange="toggleTask('${key}')">
+              <div class="task-name ${checked?'done':''}">${ex.n}</div>
+              <div class="task-desc">${ex.d || '&nbsp;'}</div>
+            </label>`;
+          }).join('')}
+        </div>
+      </article>`;
+  }).join('');
+}
+
+function renderProgress(){
+  const phase = PHASES[currentPhase];
+  let total = 0, done = 0;
+  phase.days.forEach((day,di)=>day.exs.forEach((_,ei)=>{ total++; if(getChecked(`${currentPhase}_${di}_${ei}`)) done++; }));
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('mainBar').style.width = pct + '%';
+  document.getElementById('bigRatio').textContent = `${done} / ${total}`;
+  document.getElementById('ringPercent').textContent = `${pct}%`;
+  document.getElementById('ringText').textContent = `${done} / ${total} erledigt`;
+  const circumference = 301.59;
+  const offset = circumference - (pct/100)*circumference;
+  document.getElementById('ringProgress').style.strokeDashoffset = offset;
+}
+
+function toggleTask(key){
+  setChecked(key, !getChecked(key));
+  renderWeek();
+  renderProgress();
+}
+
+function selectPhase(i){
+  currentPhase = i;
+  state.currentPhase = i;
+  saveState();
+  renderAll();
+}
+
+function resetPhase(){
+  const phase = PHASES[currentPhase];
+  phase.days.forEach((day,di)=>day.exs.forEach((_,ei)=>delete state.checked[`${currentPhase}_${di}_${ei}`]));
+  saveState();
+  renderAll();
+}
+
+function resetAll(){
+  state = {checked:{}, currentPhase};
+  state.currentPhase = currentPhase;
+  saveState();
+  renderAll();
+}
+
+function markNextOpen(){
+  const phase = PHASES[currentPhase];
+  for(let di=0; di<phase.days.length; di++){
+    for(let ei=0; ei<phase.days[di].exs.length; ei++){
+      const key = `${currentPhase}_${di}_${ei}`;
+      if(!getChecked(key)){
+        setChecked(key, true);
+        renderWeek();
+        renderProgress();
+        return;
+      }
+    }
+  }
+}
+
+function renderAll(){
+  raceStats();
+  renderPhaseNav();
+  renderInfo();
+  renderWeek();
+  renderProgress();
+}
+
+document.getElementById('resetPhaseBtn').addEventListener('click', resetPhase);
+document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+document.getElementById('markTodayBtn').addEventListener('click', markNextOpen);
+
+renderAll();
+</script>
+</body>
+</html>
