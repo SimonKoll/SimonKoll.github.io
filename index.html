@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Training Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <h1>Training Tracker</h1>
+          <div class="sub">
+            Optimized weekly intensity, bodyweight-only calisthenics, persistent
+            tracking.
+          </div>
+        </div>
+        <div class="actions">
+          <a href="history.html" class="btn">View Completed Sessions</a>
+          <button class="btn secondary" onclick="resetPhase()">
+            Reset Phase
+          </button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="label">Next race</div>
+          <div class="metric" id="nextRaceDays">0</div>
+          <div class="sub" id="nextRaceName"></div>
+        </div>
+
+        <div class="card">
+          <div class="label">Current phase</div>
+          <div class="metric" id="phaseTitleMetric"></div>
+          <div class="sub" id="phasePace"></div>
+        </div>
+
+        <div class="card">
+          <div class="label">Sessions completed</div>
+          <div class="metric" id="totalCompleted">0</div>
+          <div class="sub">Stored locally</div>
+        </div>
+      </div>
+
+      <div class="phaseBar" id="phaseBar"></div>
+      <div class="note" id="phaseNote"></div>
+
+      <div class="progressCard">
+        <div class="progressTop">
+          <div>
+            <div class="label">Progress</div>
+            <div id="progressText">0 / 0 completed</div>
+          </div>
+          <div class="progressRingWrap">
+            <div class="ring" id="ring">
+              <div class="ringText" id="ringText">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="progressTrack">
+          <div class="progressFill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div class="dayList" id="dayList"></div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="storage.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

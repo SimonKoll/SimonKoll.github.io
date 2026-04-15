@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Completed Sessions</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <h1>Completed Sessions</h1>
+          <div class="sub">
+            Stored completions from your tracker on this device.
+          </div>
+        </div>
+        <div class="actions">
+          <a href="index.html" class="btn secondary">Back to Tracker</a>
+          <button class="btn secondary" onclick="reloadHistory()">
+            Refresh
+          </button>
+          <button class="btn danger" onclick="clearAllHistory()">
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="label">Total Completed</div>
+          <div class="metric" id="historyTotalCount">0</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Total Minutes</div>
+          <div class="metric" id="historyTotalMinutes">0</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Last Completion</div>
+          <div
+            class="metric"
+            id="historyLastCompletion"
+            style="font-size: 18px"
+          >
+            —
+          </div>
+        </div>
+      </div>
+
+      <div class="list" id="historyList"></div>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="history.js"></script>
+  </body>
+</html>
