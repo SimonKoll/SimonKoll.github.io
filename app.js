@@ -5,8 +5,6 @@ let openDays = {};
 const WEEKLY_STATE_KEY = "training_tracker_weekly_checked_v1";
 const WEEKLY_STATE_WEEK_KEY = "training_tracker_weekly_checked_week_v1";
 
-/* ---------- weekly state ---------- */
-
 function getCurrentWeekId() {
   const now = new Date();
   const monday = new Date(now);
@@ -38,8 +36,6 @@ function saveWeeklyCheckedState() {
   localStorage.setItem(WEEKLY_STATE_KEY, JSON.stringify(weeklyChecked));
 }
 
-/* ---------- helpers ---------- */
-
 function tagClass(tag) {
   return (
     {
@@ -69,38 +65,39 @@ function daysTo(date) {
 }
 
 function getNextRace() {
-  return RACES.map((r) => ({ ...r, days: daysTo(r.date) })).sort(
+  const racesWithDays = RACES.map((r) => ({ ...r, days: daysTo(r.date) })).sort(
     (a, b) => a.days - b.days
-  )[0];
+  );
+
+  return racesWithDays[0];
 }
 
 function extractMinutes(text) {
   if (!text) return null;
 
-  const range = text.match(/(\d+)\s*[–-]\s*(\d+)\s*min/i);
+  const range = String(text).match(/(\d+)\s*[–-]\s*(\d+)\s*min/i);
   if (range) {
-    return Math.round((+range[1] + +range[2]) / 2);
+    return Math.round((Number(range[1]) + Number(range[2])) / 2);
   }
 
-  const single = text.match(/(\d+)\s*min/i);
-  return single ? +single[1] : null;
+  const single = String(text).match(/(\d+)\s*min/i);
+  return single ? Number(single[1]) : null;
 }
 
 function countWeeklyCompleted() {
   return Object.values(weeklyChecked).filter(Boolean).length;
 }
 
-/* ---------- UI BUILD ---------- */
-
 function buildHeader() {
   const race = getNextRace();
+  if (!race) return;
 
   document.getElementById("nextRaceDays").textContent = race.days;
   document.getElementById("nextRaceName").textContent = race.name;
 
-  document.getElementById("phaseTitleMetric").textContent =
-    PHASES[curPhase].label;
-  document.getElementById("phasePace").textContent = PHASES[curPhase].pace;
+  const phase = PHASES[curPhase];
+  document.getElementById("phaseTitleMetric").textContent = phase.label;
+  document.getElementById("phasePace").textContent = phase.pace;
 
   document.getElementById("weeklyCompleted").textContent =
     countWeeklyCompleted();
@@ -111,21 +108,30 @@ function buildHeader() {
 
 function buildPhaseBar() {
   const el = document.getElementById("phaseBar");
+  const note = document.getElementById("phaseNote");
+  if (!el || !note) return;
 
-  el.innerHTML = PHASES.map(
-    (p, i) =>
-      `<button class="phaseBtn ${
-        i === curPhase ? "active" : ""
-      }" onclick="selectPhase(${i})">${p.label}</button>`
-  ).join("");
+  el.innerHTML = PHASES.map((phase, index) => {
+    const activeClass = index === curPhase ? "active" : "";
+    return `<button class="phaseBtn ${activeClass}" data-phase-index="${index}">${phase.label}</button>`;
+  }).join("");
 
-  document.getElementById("phaseNote").textContent = PHASES[curPhase].note;
+  note.textContent = PHASES[curPhase].note;
+
+  el.querySelectorAll(".phaseBtn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.phaseIndex);
+      selectPhase(index);
+    });
+  });
 }
 
 function buildDays() {
   const phase = PHASES[curPhase];
+  const dayList = document.getElementById("dayList");
+  if (!phase || !dayList) return;
 
-  document.getElementById("dayList").innerHTML = phase.days
+  dayList.innerHTML = phase.days
     .map((day, di) => {
       const total = day.exs.length;
       const done = day.exs.filter(
@@ -133,56 +139,68 @@ function buildDays() {
       ).length;
       const isOpen = openDays[di] !== false;
 
+      const exercisesHtml = day.exs
+        .map((ex, ei) => {
+          const key = `${curPhase}_${di}_${ei}`;
+          const isDone = !!weeklyChecked[key];
+
+          return `
+        <div class="exRow">
+          <div class="check ${
+            isDone ? "on" : ""
+          }" data-di="${di}" data-ei="${ei}">
+            ${isDone ? "✓" : ""}
+          </div>
+          <div class="exMain">
+            <div class="exName ${isDone ? "done" : ""}">${ex.n}</div>
+            <div class="exDetail">${ex.d}</div>
+          </div>
+        </div>
+      `;
+        })
+        .join("");
+
       return `
       <div class="day">
-        <div class="dayHead" onclick="toggleDay(${di})">
+        <div class="dayHead" data-day-index="${di}">
           <span class="badge ${tagClass(day.tag)}">${tagLabel(day.tag)}</span>
           <div class="dayName">${day.n}</div>
           <div class="dayMeta">${done}/${total}</div>
           <div class="arrow ${isOpen ? "open" : ""}">▶</div>
         </div>
-
         <div class="dayBody ${isOpen ? "open" : ""}" id="body-${di}">
-          ${day.exs
-            .map((ex, ei) => {
-              const isDone = !!weeklyChecked[`${curPhase}_${di}_${ei}`];
-
-              return `
-              <div class="exRow">
-                <div class="check ${
-                  isDone ? "on" : ""
-                }" onclick="toggleExercise(event,${di},${ei})">
-                  ${isDone ? "✓" : ""}
-                </div>
-
-                <div class="exMain">
-                  <div class="exName ${isDone ? "done" : ""}">${ex.n}</div>
-                  <div class="exDetail">${ex.d}</div>
-                </div>
-              </div>
-            `;
-            })
-            .join("")}
+          ${exercisesHtml}
         </div>
       </div>
     `;
     })
     .join("");
+
+  dayList.querySelectorAll(".dayHead").forEach((head) => {
+    head.addEventListener("click", () => {
+      const di = Number(head.dataset.dayIndex);
+      toggleDay(di);
+    });
+  });
+
+  dayList.querySelectorAll(".check").forEach((check) => {
+    check.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const di = Number(check.dataset.di);
+      const ei = Number(check.dataset.ei);
+      toggleExercise(di, ei);
+    });
+  });
 }
 
-/* ---------- INTERACTIONS ---------- */
-
 function toggleDay(di) {
-  openDays[di] = !openDays[di];
+  openDays[di] = !(openDays[di] !== false);
   buildDays();
 }
 
-function toggleExercise(event, di, ei) {
-  event.stopPropagation();
-
+function toggleExercise(di, ei) {
   const key = `${curPhase}_${di}_${ei}`;
   const wasChecked = !!weeklyChecked[key];
-
   weeklyChecked[key] = !wasChecked;
   saveWeeklyCheckedState();
 
@@ -210,8 +228,8 @@ function toggleExercise(event, di, ei) {
   buildHeader();
 }
 
-function selectPhase(i) {
-  curPhase = i;
+function selectPhase(index) {
+  curPhase = index;
   buildHeader();
   buildPhaseBar();
   buildDays();
@@ -222,7 +240,7 @@ function resetPhase() {
   if (!confirm("Reset this phase for the current week?")) return;
 
   Object.keys(weeklyChecked).forEach((key) => {
-    if (key.startsWith(curPhase + "_")) {
+    if (key.startsWith(`${curPhase}_`)) {
       delete weeklyChecked[key];
     }
   });
@@ -233,18 +251,19 @@ function resetPhase() {
   buildHeader();
 }
 
-/* ---------- PROGRESS ---------- */
-
 function updateProgress() {
   const phase = PHASES[curPhase];
+  if (!phase) return;
 
   let total = 0;
   let done = 0;
 
   phase.days.forEach((day, di) => {
     day.exs.forEach((_, ei) => {
-      total++;
-      if (weeklyChecked[`${curPhase}_${di}_${ei}`]) done++;
+      total += 1;
+      if (weeklyChecked[`${curPhase}_${di}_${ei}`]) {
+        done += 1;
+      }
     });
   });
 
@@ -253,8 +272,8 @@ function updateProgress() {
   document.getElementById(
     "progressText"
   ).textContent = `${done} / ${total} completed`;
-  document.getElementById("progressFill").style.width = pct + "%";
-  document.getElementById("ringText").textContent = pct + "%";
+  document.getElementById("progressFill").style.width = `${pct}%`;
+  document.getElementById("ringText").textContent = `${pct}%`;
   document.getElementById(
     "ring"
   ).style.background = `conic-gradient(var(--accent) ${
@@ -262,10 +281,17 @@ function updateProgress() {
   }deg, rgba(255,255,255,0.08) 0deg)`;
 }
 
-/* ---------- INIT ---------- */
+function init() {
+  loadWeeklyCheckedState();
+  buildHeader();
+  buildPhaseBar();
+  buildDays();
+  updateProgress();
 
-loadWeeklyCheckedState();
-buildHeader();
-buildPhaseBar();
-buildDays();
-updateProgress();
+  const resetBtn = document.getElementById("resetPhaseBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetPhase);
+  }
+}
+
+init();
