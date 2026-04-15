@@ -92,18 +92,23 @@ function buildHeader() {
   const race = getNextRace();
   if (!race) return;
 
-  document.getElementById("nextRaceDays").textContent = race.days;
-  document.getElementById("nextRaceName").textContent = race.name;
+  const nextRaceDaysEl = document.getElementById("nextRaceDays");
+  const nextRaceNameEl = document.getElementById("nextRaceName");
+  const phaseTitleMetricEl = document.getElementById("phaseTitleMetric");
+  const phasePaceEl = document.getElementById("phasePace");
+  const weeklyCompletedEl = document.getElementById("weeklyCompleted");
+  const weeklyLabelEl = document.getElementById("weeklyLabel");
+
+  if (nextRaceDaysEl) nextRaceDaysEl.textContent = race.days;
+  if (nextRaceNameEl) nextRaceNameEl.textContent = race.name;
 
   const phase = PHASES[curPhase];
-  document.getElementById("phaseTitleMetric").textContent = phase.label;
-  document.getElementById("phasePace").textContent = phase.pace;
+  if (phaseTitleMetricEl) phaseTitleMetricEl.textContent = phase.label;
+  if (phasePaceEl) phasePaceEl.textContent = phase.pace;
 
-  document.getElementById("weeklyCompleted").textContent =
-    countWeeklyCompleted();
-  document.getElementById(
-    "weeklyLabel"
-  ).textContent = `Week of ${getCurrentWeekId()}`;
+  if (weeklyCompletedEl) weeklyCompletedEl.textContent = countWeeklyCompleted();
+  if (weeklyLabelEl)
+    weeklyLabelEl.textContent = `Week of ${getCurrentWeekId()}`;
 }
 
 function buildPhaseBar() {
