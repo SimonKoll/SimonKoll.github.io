@@ -1,7 +1,7 @@
 const TODAY = new Date();
 
 const RACES = [
-  { name: "Half Marathon", date: new Date(2026, 3, 29) },
+  { name: "Half Marathon", date: new Date(2026, 3, 26) },
   { name: "Linzathlon", date: new Date(2026, 4, 30) },
   { name: "Cross Triathlon", date: new Date(2026, 5, 4) },
 ];
